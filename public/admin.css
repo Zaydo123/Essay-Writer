@@ -1,0 +1,201 @@
+* {
+    box-sizing: border-box;
+  }
+  @import url(https://fonts.googleapis.com/css?family=Lora:400,400i|Open+Sans:300,400,600,700,800);
+  body {
+    font-family: "Open Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Open Sans", sans-serif;
+    color: #212121;
+    font-weight: 300;
+  }
+  h1 {
+    font-size: 45px;
+    line-height: 61px;
+  }
+  h2 {
+    font-size: 40px;
+    line-height: 50px;
+  }
+  h3 {
+    font-size: 20px;
+    line-height: 30px;
+  }
+  label,
+  li,
+  p {
+    font-size: 16px;
+    letter-spacing: 0;
+    line-height: 25px;
+    color: grey;
+    margin-bottom: 0;
+  }
+  body {
+    overflow-x: hidden;
+  }
+  a {
+    font-size: inherit;
+    color: inherit;
+  }
+  
+  #title {
+    text-align: center;
+    background-color: #2e7eed;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  #title h1 {
+    color: #fff;
+    margin: 0;
+    font-size: 36px;
+  }
+
+
+
+  /* Select dropdown styles */
+  select {
+    appearance: none;
+    border: 2px solid #0051c2;
+    padding: 12px;
+    margin: 20px;
+    width: 170px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: inherit;
+    line-height: inherit;
+    color: white;
+    background-color: #2e7eed;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+
+
+
+
+  /* Input fields styles */
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    margin: 10px 0;
+
+    background-color: #f1f1f1;
+  }
+ /* and where input id contains submit*/
+  input[type="submit"], input[type="reset"], input[id*="submit"]{
+    text-align: center;
+    width: 20%;
+    background-color: #2e7eed;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px 0;
+  }
+  
+  input[type="submit"]:hover, input[type="reset"]:hover {
+    background-color: #306ed2;
+  }
+  
+  /* Information input sections styles */
+
+  .information-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .information-inputs {
+    display: block;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin: 10px 0;
+    width: 50%;
+  }
+  .hidden {
+    display: none;
+  }
+  #console-title {
+    height: 30px;
+    width: 80%;
+    display: inline-block;
+    align-items: left;
+    padding: 3px;
+    background-color: #adadad;
+    color: #fff;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  #console-title a {
+    color: #fff;
+    margin: 0;
+    padding-left: 10px;
+    font-size: 20px;
+    text-align: left;
+    display: inline-block;
+  }
+  #textarea-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+  }
+  
+  textarea{
+    display: block;
+    justify-content: space-around;
+    align-items: center;
+    width: 80%;
+    height: 100px;
+    padding: 12px;
+    border: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    margin: 0 auto;
+    background-color: #f1f1f1;
+    resize: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    resize: vertical;
+    min-height: 200px;
+    max-height: 450px;
+  }
+  textarea:focus {
+    outline: none;
+  }
+  #new-user:checked ~ #new-user,
+  #ban-user:checked ~ #ban-user,
+  #unban-user:checked ~ #unban-user,
+  #delete-user:checked ~ #delete-user,
+  #set-balance:checked ~ #set-balance,
+  #increase-balance:checked ~ #increase-balance,
+  #decrease-balance:checked ~ #decrease-balance,
+  #remove-warnings:checked ~ #remove-warnings,
+  #manual-warning:checked ~ #manual-warning,
+  #manual-sql:checked ~ #manual-sql,
+  #search-user:checked ~ #search-user,
+  #search-ip:checked ~ #search-ip,
+  #change-email:checked ~ #change-email,
+  #change-password:checked ~ #change-password {
+    display: block;
+  }
+  /* Show the selected information input section */
+
+
+  

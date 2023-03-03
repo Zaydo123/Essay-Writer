@@ -6,7 +6,9 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const express = require('express');
+const GPT3Tokenizer = require('gpt3-tokenizer');
 //internal modules
+const sendReset  = require('./reset-password');
 const { Order } = require("./classes/Order");
 const { User } = require("./classes/User");
 const { Ban } = require("./classes/Ban");
@@ -19,10 +21,12 @@ const MODERATION_API_URL = `https://api.openai.com/v1/moderations`;
 
 //connect to database and setup class
 const db = new Database();
+
+
 db.connect();
 //web server variables
 const app = express();
-const port = 8080;
+const port = 3000;
 
 //body-parser
 app.use(express.static('public'));
@@ -33,16 +37,70 @@ app.use(express.json());
 app.set('view engine', 'ejs');
 
 
+let tiers = {
+
+  "free": {
+    "tokens": 200,
+    "price": 0,
+    "max_tokens": 200,
+    "engine": "gpt-3.5-turbo"
+  },
+  "basic": {
+    "tokens": 1000,
+    "price": 5,
+    "max_tokens": 500,
+    "engine": "gpt-3.5-turbo"
+  },
+  "pro": {
+    "tokens": 4000,
+    "price": 20,
+    "max_tokens": 1000,
+    "engine": "gpt-3.5-turbo"
+  },
+  "admin": {
+    "tokens": 100000,
+    "price": 1000000000,
+    "max_tokens": 1000,
+    "engine": "gpt-3.5-turbo"
+  }
+
+}
+
+
+
+//-----------------------
+
+/* TESTING CODE */
+
+
+
+
+//send reset is an async function 
+
+//db.generateResetPasswordToken("zaydalzein@gmail.com", (token) => {
+//  console.log(token);
+//  //sendReset("zaydalzein@gmail.com", process.env.WEB_URL+"/reset-password?token=" + token);
+//});
+
+// ------------------------------
+
+
+
+
 //openai INIT 
 const configuration = new Configuration({
     apiKey: process.env.API_KEY,
 });  
 const openai = new OpenAIApi(configuration);
 
+//let tokenizerGPT3 = new GPT3Tokenizer.GPT3Tokenizer({type: "gpt3"});
+//let tokenizerCODEX = new GPT3Tokenizer.GPT3Tokenizer({type: "codex"});
+//
 
 
+// ------------------------------
 let starting_balance = 20.00;
-
+// ------------------------------
 
 
 /*
@@ -52,17 +110,19 @@ GET REQUESTS
 */
 
 
-app.get('/',verify,(req, res) => {
+app.get('/',(req, res) => {
   res.sendFile(__dirname + '/public/homepage.html');
 });
 
 app.get('/admin', verify,(req, res) => {
-  if(jwt.decode(req.cookies.Authorization).tier != "admin"){
-    res.status(400).json({"error": "not logged in as authorized user"});
-    return;
-  } else{
-    res.sendFile('/private/admin.html');
-  }
+  let email = jwt.decode(req.cookies.Authorization).email;
+  db.getUser(email, (user) => {
+    if(user[0].tier != "admin"){
+      res.status(400).json({"error": "not admin"});
+    } else{
+      res.sendFile(__dirname+'/private/admin.html');
+    }
+  });
 });
 
 app.get('/beta', verify,(req, res) => {
@@ -70,12 +130,37 @@ app.get('/beta', verify,(req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.sendFile(__dirname + '/public/authorization/index.html');
+  //if already logged in, redirect to beta 
+  if(req.cookies.Authorization){
+    res.redirect('/beta');
+    return;
+  }
+  res.sendFile(__dirname + '/public/authorization/login.html');
 });
 
+app.post('/sign-out', verify, (req, res) => {
+  //delete all cookies
+  res.clearCookie('Authorization');
+  res.redirect('/login');
+});
+
+//get users amount of tokens
+app.get('/token-count', (req, res) => {
+  let email = jwt.decode(req.cookies.Authorization).email;
+  console.log(email);
+  db.getUser(email, (user) => {
+    if(user[0]){
+      res.json({"tokens": user[0].balance});
+      console.log(user[0].balance);
+      
+    } else {
+      res.status(400).json({"error": "user does not exist"});
+    }
+  });
+});
 
 app.get('/account', verify,(req, res) => {
-  res.sendFile(__dirname + '/public/account/index.html');
+  res.sendFile(__dirname + '/public/authorization/account.html');
 });
 
 app.get('/userinfo/:email', verify,(req, res) => {
@@ -95,8 +180,47 @@ app.get('/userinfo/:email', verify,(req, res) => {
   });
 });
 
+app.get('/get-name-tier/:email',(req, res) => {
+  db.getUser(req.params.email, (user) => {
+      if(!user[0]){
+        res.status(400).json({"error": "user does not exist"});
+        return;
+      }
 
 
+      user = user[0];
+      console.log(user);
+      res.json({"firstName": user.firstName, "tier": user.tier});
+  });
+});
+app.get('/get-user-info',(req, res) => {
+  if(req.cookies.Authorization == undefined){
+    res.status(400).json({"error": "not logged in"});
+    return;
+  }
+  let email = jwt.decode(req.cookies.Authorization).email;
+  db.getUser(email, (user) => {
+    console.log(req.params.email);
+      if(!user[0]){
+        res.status(400).json({"error": "user does not exist"});
+        return;
+      }
+      user = user[0];
+      console.log(user);
+      res.json({
+      "firstName": user.firstName, 
+      "lastName": user.lastName, 
+      "tier": user.tier, 
+      "balance": user.balance, 
+      "email": user.email, 
+      "completionsCount": user.completionsCount,
+      "usedTokens": user.usedTokens,
+
+    
+    });
+  });
+});
+//get user email from cookie?
 
 /*
 
@@ -107,10 +231,17 @@ POST REQUESTS
 
 app.post('/ai', verify, async (req, res) => {
   let prompt = req.body.prompt;
+
+  if(!prompt||prompt.length < 1){
+    res.status(400).json({"error": "prompt is empty"});
+    return;
+  }
+
   let jwtToken = req.cookies.Authorization;
   let jwtUser = jwt.decode(jwtToken);
   let engine;
-  //check if user is banned
+
+
    db.getUser(jwtUser.email, (user) => {
     if(!user[0]){
       res.status(400).json({"error": "user does not exist"});
@@ -125,32 +256,42 @@ app.post('/ai', verify, async (req, res) => {
       return;
     }
   
-    if(user.banned.banned){
-      db.expireWarnings(user.email);
+    //jsonify the banned object and warnings object
+    console.log(typeof(user.banned));
+    let ban = JSON.parse(user.banned);
+    let warnings = JSON.parse(user.warnings);
+
+    //if user is banned, return error
+    if(ban.banned){
       res.status(400).json({"error": "user is banned"});
       return;
-    } 
+    }
 
-    if(user.warnings.length > 0){
+    //if user has warnings, expire them
+    if(warnings.warnings > 0){
       db.expireWarnings(user.email);
     }
 
-    if(tier == "free"){
-      engine = "text-curie-001";
-    }
-    else if(tier == "pro"){
-      engine = "text-davinci-003";
-    } else{
-      res.status(400).json({"error": "invalid tier"});
+
+    console.log(ban);
+    console.log(warnings);
+
+
+
+    // see if tier is in tiers
+      
+    if(!tiers[tier]){
+      res.status(400).json({"error": "user tier does not exist"});
       return;
     }
 
+    //remember to uncomment this
     // calculate tokens
-    if(calculateTokenCost(prompt) > user.balance){
-      res.status(400).json({"error": "user does not have enough tokens"});
-      return;
-    }
-  
+    //if(calculateTokenCost(prompt) > user.balance){
+    //  res.status(400).json({"error": "user does not have enough tokens"});
+    //  return;
+    //}
+  //
     //make sure prompt is not agauist terms of service
     const headers = 
     {
@@ -187,20 +328,24 @@ app.post('/ai', verify, async (req, res) => {
           return;
         }
       }
+      
       const response = openai.createCompletion({
-        model: "text-davinci-003",
+        model: tiers[tier].engine,
         prompt: prompt,
-        max_tokens: 256,
+        max_tokens: tiers[tier].max_tokens,
         temperature: 0,
       }).catch((error) => {
         console.log(error);
         res.status(400).json({"error": "error with openai api"});
+        return;
       });
       response.then((data) => {
         //console.log(data);
         let completion = data.data.choices[0].text;
         res.json({"completion": completion});
-        db.decrementBalance(user.email,data.data.usage.total_tokens);
+        if(data.data.usage.completion_tokens>0){
+          db.decrementBalance(user.email,data.data.usage.total_tokens);
+        }
       });
    });
 });
@@ -286,7 +431,12 @@ app.post('/register', (req, res) => {
       delete userCleaned.ip;
       const accessToken = jwt.sign(userCleaned, process.env.ACCESS_TOKEN_SECRET);
 
-      res.cookie('Authorization', accessToken).send({"success": "user created"});
+      if(!req.body.noauth){
+        res.cookie('Authorization', accessToken).send({"success": "user created"});
+      } else{
+        res.json({"success": "user created"});
+      }
+
       //res.cookie('Authorization', accessToken, {secure: true}).json({"success":"user created"});
     }
     else{
@@ -296,11 +446,101 @@ app.post('/register', (req, res) => {
   
 });
 
+app.post("/submit-contact-request", (req, res) => {
+  // client : $.post("/submit-contact-request", {name: name, email: email, subject: subject, message: message}, function(data){
+  let id = crypto.randomUUID();
+  let email = req.body.email;
+  let name = req.body.name;
+  let subject = req.body.subject;
+  let message = req.body.message;
+  if(!email || !name || !subject || !message){
+    res.status(400).json({"error": "missing fields"});
+    return;
+  }
+  if(email.indexOf("@") == -1){
+    res.status(400).json({"error": "invalid email"});
+    return;
+  }
+
+  console.log("contact request from " + email + " with id " + id);
+  console.log('details: ' + name + " " + subject + " " + message);
+
+});
+
+app.get('/searchUser', verify, (req, res) => {
+  // client email="",UID="",IP="",firstName="",lastName=""
+  let email = jwt.decode(req.cookies.Authorization).email;
+  db.getUser(email, (user) => {
+    user = user[0];
+    if(user == undefined){
+      res.status(400).json({"error": "not logged in as authorized user"});
+      return;
+    }
+    if(user.tier != "admin"){
+      res.status(400).json({"error": "not logged in as authorized user"});
+      return;
+    } else{
+      let searchParams = req.query;
+      db.searchUser(searchParams, (users) => {
+        res.json(users);
+      });
+    }
+  });
+});
+
+
+app.get('/forgot-password', (req, res) => {
+  res.sendFile(__dirname + '/public/authorization/forgot.html');
+});
+
+
+app.post('/forgot-password', (req, res) => {
+  if(req.query.email == null || req.query.email.length == 0){
+    res.status(400).json({"error": "email cannot be empty"});
+    return;
+  }
+  const email = req.query.email;
+  db.getUser(email, (user) => {
+    if(user[0] == undefined){
+      res.status(400).json({"error": "user does not exist"});
+      return;
+    }
+    db.generateResetPasswordToken(email, (result) => {
+      if(result == undefined){
+        res.status(400).json({"error": "unknown error"});
+        return;
+      }
+      sendReset("zaydalzein@gmail.com", process.env.WEB_URL+"/reset-password?token=" + token);
+      res.json({"success": "email sent"});
+    });
+  });
+});
+
+      
+      
+
+
+//127.0.0.1:3000/reset-password?token=e6035073-1702-4744-9a8c-f77e311bcb1e
+app.get('/reset-password', (req, res) => {
+  console.log(req.query);
+  db.verifyResetPasswordToken(req.query.email,req.query.token, (user) => {
+    if(user.length == 0){
+      res.status(400).json({"error": "invalid token"});
+      return;
+    }
+    res.sendFile(path.join(__dirname + '/reset-password.html'));  });
+});
+    
+
+app.get('*', function(req, res){
+  res.sendFile(__dirname+'/public/404.html');
+});
+
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
- 
+
 
 // Path: classes/User.js
 function newUser(ip,email,password,fullName){
@@ -317,10 +557,10 @@ function newUser(ip,email,password,fullName){
     lastName = fullName.split(" ")[1];
   }
   let u1 = new User(ip,email,hashedPassword,firstName,lastName,tier);
-  u1.setBalance(starting_balance);
+  u1.setBalance(tiers['free'].tokens);
   u1.setFirstName(firstName);
   u1.setLastName(lastName);
-  u1.setAccountCreatedAt(new Date().toISOString().slice(0, 19).replace("T", " "));
+  u1.setAccountCreatedAt(Date.now());
   u1.setAdsClicked(0);
   u1.setAdsWatched(0);
   u1.setBanned(JSON.stringify({"banned": false, "reason": "", "date": ""}));
@@ -350,20 +590,11 @@ function verify(req,res,next){
 }
 
 
-function calculateTokenCost(inputString){
-  //space = 1 token
-  //new line = 1 token
-  //character = 0.25 tokens
-  let tokens = 0;
-  for(let i = 0; i < inputString.length; i++){
-    if(inputString[i] == " "){
-      tokens++;
-    } else if(inputString[i] == "\n"){
-      tokens++;
-    }
-    else{
-      tokens += 0.25;
-    }
+function calculateTokenCost(inputString, model){
+  if(model == "CODEX"){
+    let encoded = tokenizerCODEX.encode(inputString);
+  } else if(model == "GPT3"){
+    let encoded = tokenizerGPT3.encode(inputString);
   }
-  return tokens
+  return encoded.length;
 }

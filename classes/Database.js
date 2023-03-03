@@ -46,6 +46,51 @@ class Database {
         });
     }
 
+    getUserByUID(UID, callback) {
+        this.db.query(`SELECT * FROM users WHERE UID = '${UID}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    getUsersByIP(ip, callback) {
+        this.db.query('SELECT * FROM users WHERE ip = ?', [ip], (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    getUsersByFirstName(firstName, callback) {
+        this.db.query('SELECT * FROM users WHERE firstName = ?', [firstName], (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    getUsersByLastName(lastName, callback) {
+        this.db.query('SELECT * FROM users WHERE lastName = ?', [lastName], (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    getUsersByFullName(firstName, lastName, callback) {
+        this.db.query('SELECT * FROM users WHERE firstName = ? AND lastName = ?', [firstName, lastName], (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
     newUser(user, callback) {
         this.db.query(`INSERT INTO users (ip, email, password, firstName, lastName, tier, balance, UID, warnings, completionsCount, usedTokens, orders, accountCreatedAt, adsWatched, adsClicked, banned) VALUES ('${user.getIp()}','${user.getEmail()}','${user.getPassword()}','${user.getFirstName()}','${user.getLastName()}','${user.getTier()}','${user.getBalance()}','${user.getUID()}','${user.getWarnings()}','${user.getCompletionsCount()}','${user.getUsedTokens()}','${user.getOrders()}','${user.getAccountCreatedAt()}','${user.getAdsWatched()}','${user.getAdsClicked()}','${user.getBanned()}')`, (err, result) => {
             if (err) {
@@ -110,7 +155,7 @@ class Database {
             }
             );
 
-            //if warnings > 10, ban user
+            //if warnings > WARNING_LIMIT, ban user
             if (JSON.parse(newList).warnings.length > WARNING_LIMIT) {
                 this.banUser(email, "System", "Too many warnings", thirty_days_from_now, (result) => {
                     console.log("Banned user");
@@ -123,7 +168,7 @@ class Database {
         this.getUser(email, (user) => {
             user = user[0];
             const today = new Date(); 
-            this.db.query(`UPDATE users SET banned = '${JSON.stringify(new Ban(user.UID, today, bannedBy, reason, expires, user.ip).toJson())}' WHERE email = '${email}'`, (err, result) => {
+            this.db.query(`UPDATE users SET banned = '${JSON.stringify(new Ban(user.UID, today, bannedBy, reason, expires, true, user.ip).toJson())}' WHERE email = '${email}'`, (err, result) => {
                 if (err) {
                     throw err;
                 }
@@ -206,10 +251,118 @@ class Database {
             });
         });
     }
+    getFirstName(email) {
+        this.getUser(email, (user) => {
+            user = user[0];
+            return user.firstName;
+        });
+    }
+
+    searchUser(searchParams, callback) {
+        let email = searchParams.email;
+        let UID = searchParams.UID;
+        let IP = searchParams.IP;
+        let firstName = searchParams.firstName;
+        let lastName = searchParams.lastName;
+
+        //IF EMAIL IS NOT EMPTY
+        if(email!=""){
+            this.getUser(email, (user) => {
+                callback(user);
+            });
+        }
+        //IF UID IS NOT EMPTY
+        else if(UID!=""){
+            this.getUserByUID(UID, (user) => {
+                callback(user);
+            });
+        }
+
+        //IF FIRST AND LAST NAME ARE NOT EMPTY
+        else if(firstName!="" && lastName!=""){
+            this.getUsersByFullName(firstName, lastName, (user) => {
+                callback(user);
+            });
+        }
+
+        //IF FIRSTNAME IS NOT EMPTY
+        else if(firstName!=""){
+            this.getUsersByFirstName(firstName, (user) => {
+                callback(user);
+            });
+        }
+        //IF LASTNAME IS NOT EMPTY
+        else if(lastName!=""){
+            this.getUsersByLastName(lastName, (user) => {
+                callback(user);
+            });
+        }
+
+        //IF IP IS NOT EMPTY
+        else if(IP!=""){
+            this.getUsersByIP(IP, (user) => {
+                callback(user);
+            });
+        }
+        
+
+        //IF ALL ARE EMPTY
+        else{
+            callback(null);
+        }
+    }
+
+    generateResetPasswordToken(email, callback) {
+        this.getUser(email, (user) => {
+            user = user[0];
+            let token = crypto.randomUUID();
+            this.db.query(`INSERT INTO passwordResetCodes (email, resetCode,created) VALUES ('${email}', '${token}', '${Date.now()}')`, (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                callback(token);
+            }
+            );
+        });
+    }
+
+    deleteResetPasswordToken(email, callback) {
+        this.db.query(`DELETE FROM password-reset-codes WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    resetPassword(email, password, callback) {
+        this.db.query(`UPDATE users SET password = '${password}' WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    verifyResetPasswordToken(email, token, callback) {
+        this.db.query(`SELECT * FROM passwordResetCodes WHERE email = '${email}' AND resetCode = '${token}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    
+
+
 
     
+
+
+
 }
+
 
 module.exports = {
     Database
 }
+

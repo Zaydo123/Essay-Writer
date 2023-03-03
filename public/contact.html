@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  ================================================== -->
+  <meta charset="utf-8">
+  <title>Physics-Chat | Contact</title>
+
+  <!-- Mobile Specific Metas
+  ================================================== -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="Bootstrap App Landing Template">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="author" content="Themefisher">
+  <meta name="generator" content="Themefisher Small Apps Template v1.0">
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
+  
+  <!-- PLUGINS CSS STYLE -->
+  <link rel="stylesheet" href="plugins/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="plugins/slick/slick.css">
+  <link rel="stylesheet" href="plugins/slick/slick-theme.css">
+  <link rel="stylesheet" href="plugins/fancybox/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="plugins/aos/aos.css">
+
+  <!-- CUSTOM CSS -->
+  <link href="index.css" rel="stylesheet">
+  <link href="contact.css" rel="stylesheet">
+
+</head>
+
+<body class="body-wrapper" data-spy="scroll" data-target=".privacy-nav">
+
+
+  <nav class="navbar main-nav navbar-expand-lg px-2 px-sm-0 py-2 py-lg-0">
+    <div class="container">
+    <img class="img-fluid" src="images/mainLogo-b@0.5x.png" alt="Logo" style="height: 40px; margin: 5px; margin-right: 10px;">
+      <a class="navbar-brand" href="/">Physics-Chat</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="ti-menu"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item dropdown ">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Home
+              <span><i class="ti-angle-down"></i></span>
+            </a>
+            <!-- Dropdown list -->
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/authorization/login.html">Sign Up</a></li>
+              <li><a class="dropdown-item" href="/authorization/login.html">Login</a></li>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown @@pages">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Legal
+              <span><i class="ti-angle-down"></i></span>
+            </a>
+            <!-- Dropdown list -->
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item @@privacy" href="privacy-policy.html">Privacy</a></li>
+              <li><a class="dropdown-item @@faq" href="FAQ.html">FAQ</a></li>
+            </ul>
+          </li>
+          <li class="nav-item active @@contact">
+            <a class="nav-link" href="contact.html">Contact</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+<!--================================
+=            Page Title            =
+=================================-->
+
+<section class="section page-title" style="padding-bottom: 0px;">
+	<div class="container">
+		<div class="row">
+			<div style="  margin: 0 auto;
+      float: none;"class="col-sm-8 m-auto">
+				<!-- Page Title -->
+				<h1>Contact Us</h1>
+				<!-- Page Description -->
+				<p>Have an issue? Want a feature? The only way we can help is if you let us know.</p>
+        <p><strong>IF YOU ARE INTERESTED IN THE BETA PROGRAM YOU MUST EMAIL US</strong></p>
+        <a style="color:dodgerblue" href="mailto:support@physics-chat.com">support@physics-chat.com</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!--====  End of Page Title  ====-->
+
+
+<section class="contact-form ">
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<form action="">
+					<div class="row">
+						<!-- Name -->
+						<div class="col-md-6 mb-2">
+							<input class="form-control main" type="text" placeholder="Name" required>
+						</div>
+						<!-- Email -->
+						<div class="col-md-6 mb-2">
+							<input class="form-control main" type="email" placeholder="Your Email Address" required>
+						</div>
+						<!-- subject -->
+						<div class="col-md-12 mb-2">
+							<input class="form-control main" type="text" placeholder="Subject" required>
+						</div>
+						<!-- Message -->
+						<div class="col-md-12 mb-2">
+							<textarea class="form-control main" name="message" rows="10" placeholder="Your Message"></textarea>
+						</div>
+						<!-- Submit Button -->
+						<div class="col-12 text-right">
+							<button class="btn btn-main-md">Submit</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!--============================
+=            Footer            =
+=============================-->
+<footer>
+  <div class="footer-main">
+
+  </div>
+
+</footer>
+
+
+  <!-- To Top -->
+  <div class="scroll-top-to">
+    <i class="ti-angle-up"></i>
+  </div>
+  
+  <!-- JAVASCRIPTS -->
+  <script src="plugins/jquery/jquery.min.js"></script>
+  <script src="plugins/bootstrap/bootstrap.min.js"></script>
+  <script src="plugins/slick/slick.min.js"></script>
+  <script src="plugins/fancybox/jquery.fancybox.min.js"></script>
+  <script src="plugins/syotimer/jquery.syotimer.min.js"></script>
+  <script src="plugins/aos/aos.js"></script>
+ <script>
+
+    //Code for the contact form, to add to database.
+    //when the submit button is clicked
+    $(".btn-main-md").click(function(){
+      //get the values from the form
+      var name = $(".form-control.main").eq(0).val();
+      var email = $(".form-control.main").eq(1).val();
+      var subject = $(".form-control.main").eq(2).val();
+      var message = $(".form-control.main").eq(3).val();
+      console.log(name, email, subject, message);
+      //send the values to the submit-contact-request endpoint
+      $.post("/submit-contact-request", {name: name, email: email, subject: subject, message: message}, function(data){
+        //if the request was successful
+        if(data == "success"){
+          //show a success message
+          alert("Your message has been sent!");
+        }
+        //if the request was not successful
+        else{
+          //show an error message
+          alert("There was an error sending your message. Please try again later.");
+        }
+      });
+    });
+    
+
+
+
+</script>
+
+</body>
+
+</html>
+

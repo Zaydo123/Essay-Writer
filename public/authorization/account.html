@@ -7,9 +7,9 @@
 
 ">
 <head>
-	<title>Physics Chat | Beta</title>
-	<link rel="stylesheet" href="/app/beta.css" />
-	<link href="index.css" rel="stylesheet">
+	<link rel="stylesheet" href="/authorization/account.css" />
+	<title>Physics Chat | Account</title>
+	<link href="/index.css" rel="stylesheet">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="description" content="Bootstrap App Landing Template">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -22,11 +22,10 @@
 	<link rel="stylesheet" href="/plugins/slick/slick-theme.css">
 	<link rel="stylesheet" href="/plugins/fancybox/jquery.fancybox.min.css">
 	<link rel="stylesheet" href="/plugins/aos/aos.css">
-
 </head>
 <nav class="navbar main-nav navbar-expand-lg px-2 px-sm-0 py-2 py-lg-0" style="    border-bottom: 1px solid #ccc;">
 	<div class="container" >
-	  <img class="img-fluid" src="images/mainLogo-b@0.5x.png" alt="Logo" style="height: 40px; margin: 5px; margin-right: 10px;">
+	  <img class="img-fluid" src="/images/mainLogo-b@0.5x.png" alt="Logo" style="height: 40px; margin: 5px; margin-right: 10px;">
 	  <a style="color: #000000;" class="navbar-brand" href="/">Physics-Chat</a>
 	  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
 		aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,8 +39,8 @@
 			</a>
 			<!-- Dropdown list -->
 			<ul class="dropdown-menu">
-			  <li><a class="dropdown-item" href="/authorization/login.html">Sign Up</a></li>
-			  <li><a class="dropdown-item" href="/authorization/login.html">Login</a></li>
+			  <li><a class="dropdown-item" href="/login">Sign Up</a></li>
+			  <li><a class="dropdown-item" href="/login">Login</a></li>
 		   </li>
 			</ul>
 		  </li>
@@ -60,15 +59,14 @@
 		  </li>
 		  <ul class="navbar-nav ml-auto">
 			<li class="nav-item dropdown active">
-			  <a id="username-text"class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">Username
+			  <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" id="username-txt">Username
 				<span><i class="ti-angle-down"></i></span>
 			  </a>
 			  <!-- Dropdown list -->
 			  <ul class="dropdown-menu">
-				<li><a id="sign-out" class="dropdown-item active" href="">App</a></li>
-				<li><a class="dropdown-item" href="/account">My Account</a></li>
+				<li><a id="sign-out" class="dropdown-item" href="">App</a></li>
+				<li><a class="dropdown-item active" href="/account">My Account</a></li>
 				<li><a id="sign-out" class="dropdown-item" href="">Sign Out</a></li>
-				
 			 </li>
 			  </ul>
 
@@ -85,31 +83,56 @@
   </nav>
   
   <body style="background: transparent;">
-	<div class="textbox">
-		<h2>This is a Chat Beta</h2>
-		<h4 style="color:dimgray; font-size: medium;">
-			<a><strong>Free access is limited.</strong></a>
-			<a href="contact.html" style="color:#2e7eed; text-decoration:none;">
-			  Contact us
-			</a> if you are interested in gaining access to premium features in exchange for beta testing.
-		</h4>
-		<h4 style="color:dimgray; font-size: medium;"> If you discover any problems, email us! We'll give you some tokens for your help.</h4>		
-		<textarea id="text-area" class="text-area"></textarea>
-		<div class="button-container">
-			<button id="submit" class="submit">Submit</button>
-			<button id="clear"class="clear">Clear</button>
-			<div class="token-box">
-				Tokens: <span id="token-count"></span>
+	<div class="account-container">
+	  <div class="account-settings">
+		<h2>Account Settings</h2>
+		<form>
+			<label for="full-name">Full Name</label>
+			<input id="full-name" type="text" name="Full Name" readonly/>
+			<label for="email-address">Email Address</label>
+			<input id="email-address" type="text" name="email" readonly/>
+			<label for="tier">Tier</label>
+			<input id="tier" type="text" name="tier" readonly/>
+			<label for="beta-usage">Number of Completions</label>
+			<input id="beta-usage" type="text" name="beta" readonly/>
+			<label for="tokens-spent">Amount of Tokens Spent</label>
+			<input id="tokens-spent" type="text" name="tokens" readonly/>
+			<label for="user-balance">User Balance</label>
+			<input id="user-balance" type="text" name="balance" readonly/>
+			<button id="request-btn" type="submit">Request Tokens</button>
+			<button id="reset-btn" href="forgot.html">Reset Password</button>
+		</form>
+	  </div>
+	  <div class="plan-information-container">
+		<h2 style="border-bottom: 2px solid white; border-radius: 0;">Plan Information</h2>
+		<div class="plan-information">
+			<div id="free-information-item"class="plan-information-item ">
+				<h3>Free</h3>
+				<p>
+				  200 free tokens<br>
+				  Maximum 200 tokens per request<br>
+				  Engine: text-curie-001
+				</p>
 			  </div>
-			
-			<div class="basic"></div>
-		</div>
-		  
-
+			  <div id="basic-information-item" class="plan-information-item">
+				<h3>Basic</h3>
+				<p>
+				  1000 tokens for $5<br>
+				  Maximum 500 tokens per request<br>
+				  Engine: text-davinci-003
+				</p>
+			  </div>
+			  <div id="pro-information-item"class="plan-information-item">
+				<h3>Pro</h3>
+				<p>
+				  4000 tokens for $20<br>
+				  Maximum 1000 tokens per request<br>
+				  Engine: text-davinci-003
+				</p>
+			  </div>
 	</div>
-	<script src="/plugins/jquery/jquery.min.js"></script>
-	<script src="/app/beta.js"></script>
-</body>
-
+  </body>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="/authorization/account.js"></script>
 </html>
 
