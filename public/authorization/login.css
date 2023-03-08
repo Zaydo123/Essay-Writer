@@ -235,7 +235,10 @@ font-weight: 400;
 }
 
 
+#checkbox-label{
+margin-bottom: 5px;
 
+}
 
 
 
@@ -384,12 +387,13 @@ label {
   font-size: 13px;
   text-align: center;
   color: #ffffff;
-  padding-top: 8px;
+  padding: 8px;
   width: 100%;
-  height: 35px;
+  height: contain;
 	border: none;
 	border-radius: 20px;
-  margin-top: 23px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   background-color: #1059FF;
 }
 
@@ -509,16 +513,17 @@ a.btn-signup:hover, a.btn-signin:hover {
   opacity: 0;
 }
 .premium-status-container {
-
+  top: 50%;
   position: relative;
-  top: 0;
   left: 0;
   right: 0;
-  padding: 50px;
+  padding-top: 0px;
   
 }
 .premium-status-container-hidden {
-height: 0px;
+  height: 0px;
+  display: none !important;  
+
 }
 .premium-status-container a {
 
@@ -557,15 +562,19 @@ h1 {
   cursor: pointer;
   
 }
+#check {
+  border: #0F4FE6 1px solid;
+
+}
 
 #check path {
-  stroke: #202880;
+  stroke: #202880 ;
   stroke-linecap:round;
   stroke-linejoin:round;
   stroke-width: .85px;
   stroke-dasharray: 60px 300px;
   stroke-dashoffset: -166px;
-  fill: rgba(255,255,255,.0);
+  fill: rgba(255,255,255, 1);
   transition: stroke-dashoffset 2s ease .5s, fill 1.5s ease 1.0s;
 }
 #check.checked path {
@@ -577,6 +586,16 @@ h1 {
   to {
     stroke-dashoffset: 0;
   }
+}
+.checkbox-container input[type="checkbox"] {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.checkbox-container label {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 

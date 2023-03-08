@@ -17,6 +17,7 @@ const { Database } = require("./classes/Database");
 const crypto = require('crypto');
 const fetch = require("node-fetch");
 
+
 const MODERATION_API_URL = `https://api.openai.com/v1/moderations`;
 
 //connect to database and setup class
@@ -29,6 +30,7 @@ const app = express();
 const port = 3000;
 
 //body-parser
+
 app.use(express.static('public'));
 app.use(express.json());
 app.use(cookieParser(process.env.COOKIE_SECRET))
@@ -37,56 +39,17 @@ app.use(express.json());
 app.set('view engine', 'ejs');
 
 
-let tiers = {
-
-  "free": {
-    "tokens": 200,
-    "price": 0,
-    "max_tokens": 200,
-    "engine": "gpt-3.5-turbo"
-  },
-  "basic": {
-    "tokens": 1000,
-    "price": 5,
-    "max_tokens": 500,
-    "engine": "gpt-3.5-turbo"
-  },
-  "pro": {
-    "tokens": 4000,
-    "price": 20,
-    "max_tokens": 1000,
-    "engine": "gpt-3.5-turbo"
-  },
-  "admin": {
-    "tokens": 100000,
-    "price": 1000000000,
-    "max_tokens": 1000,
-    "engine": "gpt-3.5-turbo"
-  }
-
-}
-
-
-
-//-----------------------
-
-/* TESTING CODE */
+//import express routes from ./stripe.js
+require('./stripe')(express,bodyParser,app,db,process.env.STRIPE_SECRET_KEY,process.env.STRIPE_PUBLISHABLE_KEY,process.env.DOMAIN);
 
 
 
 
-//send reset is an async function 
 
-//db.generateResetPasswordToken("zaydalzein@gmail.com", (token) => {
-//  console.log(token);
-//  //sendReset("zaydalzein@gmail.com", process.env.WEB_URL+"/reset-password?token=" + token);
-//});
+//read tiers.json
+let tiers = require('./tiers.json');
 
-// ------------------------------
-
-
-
-
+ 
 //openai INIT 
 const configuration = new Configuration({
     apiKey: process.env.API_KEY,
@@ -129,6 +92,23 @@ app.get('/beta', verify,(req, res) => {
   res.sendFile(__dirname + '/public/app/beta.html');
 });
 
+app.get('/privacy',(req, res) => {
+  res.sendFile(__dirname + '/public/privacy-policy.html');
+});
+app.get('/tos',(req, res) => {
+  res.sendFile(__dirname + '/public/tos.html');
+});
+app.get('/disclaimer',(req, res) => {
+  res.sendFile(__dirname + '/public/disclaimer.html');
+});
+app.get('/cookie',(req, res) => {
+  res.sendFile(__dirname + '/public/cookie-policy.html');
+});
+app.get('/shop',(req, res) => {
+  res.sendFile(__dirname + '/public/shop.html');
+  //res.send("<h3>Thanks Beta Testers</h3>Shop is currently closed. We are working on the page and do not want to take any orders at this time. Please check back later.")
+});
+
 app.get('/login', (req, res) => {
   //if already logged in, redirect to beta 
   if(req.cookies.Authorization){
@@ -138,20 +118,17 @@ app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/public/authorization/login.html');
 });
 
-app.post('/sign-out', verify, (req, res) => {
-  //delete all cookies
-  res.clearCookie('Authorization');
-  res.redirect('/login');
+app.get('/sign-out', verify, (req, res) => {
+  //overwrite authorization cookie to sign out
+  res.send('<script>document.cookie = "Authorization= ; expires = Thu, 01 Jan 1970 00:00:00 GMT", document.location.href = "/";</script>');
 });
 
 //get users amount of tokens
 app.get('/token-count', (req, res) => {
   let email = jwt.decode(req.cookies.Authorization).email;
-  console.log(email);
   db.getUser(email, (user) => {
     if(user[0]){
       res.json({"tokens": user[0].balance});
-      console.log(user[0].balance);
       
     } else {
       res.status(400).json({"error": "user does not exist"});
@@ -189,7 +166,6 @@ app.get('/get-name-tier/:email',(req, res) => {
 
 
       user = user[0];
-      console.log(user);
       res.json({"firstName": user.firstName, "tier": user.tier});
   });
 });
@@ -200,13 +176,11 @@ app.get('/get-user-info',(req, res) => {
   }
   let email = jwt.decode(req.cookies.Authorization).email;
   db.getUser(email, (user) => {
-    console.log(req.params.email);
       if(!user[0]){
         res.status(400).json({"error": "user does not exist"});
         return;
       }
       user = user[0];
-      console.log(user);
       res.json({
       "firstName": user.firstName, 
       "lastName": user.lastName, 
@@ -257,7 +231,6 @@ app.post('/ai', verify, async (req, res) => {
     }
   
     //jsonify the banned object and warnings object
-    console.log(typeof(user.banned));
     let ban = JSON.parse(user.banned);
     let warnings = JSON.parse(user.warnings);
 
@@ -271,10 +244,6 @@ app.post('/ai', verify, async (req, res) => {
     if(warnings.warnings > 0){
       db.expireWarnings(user.email);
     }
-
-
-    console.log(ban);
-    console.log(warnings);
 
 
 
@@ -329,9 +298,9 @@ app.post('/ai', verify, async (req, res) => {
         }
       }
       
-      const response = openai.createCompletion({
+      const response = openai.createChatCompletion({
         model: tiers[tier].engine,
-        prompt: prompt,
+        messages: [{role:"user",content:prompt}],
         max_tokens: tiers[tier].max_tokens,
         temperature: 0,
       }).catch((error) => {
@@ -340,8 +309,8 @@ app.post('/ai', verify, async (req, res) => {
         return;
       });
       response.then((data) => {
-        //console.log(data);
-        let completion = data.data.choices[0].text;
+        console.log(data);
+        let completion = data.data.choices[0].message.content;
         res.json({"completion": completion});
         if(data.data.usage.completion_tokens>0){
           db.decrementBalance(user.email,data.data.usage.total_tokens);
@@ -379,7 +348,7 @@ app.post('/login', (req, res) => {
       try{
         if(bcrypt.compareSync(req.body.password, user.password)){
           const accessToken = jwt.sign(userCleaned, process.env.ACCESS_TOKEN_SECRET);
-          res.cookie('Authorization', accessToken).send({"success": "logged in"});
+          res.cookie('Authorization', accessToken,{maxAge:Date.now()+3600000,overwrite:true}).send({"success": "logged in"});
           //res.cookie('Authorization', accessToken, {secure: true}).send(accessToken);
 
 
@@ -409,20 +378,22 @@ app.post('/register', (req, res) => {
       return;
     }
 
-    if(req.body.email.indexOf("@") == -1){
+    else if(req.body.email.indexOf("@") == -1||req.body.email.indexOf(".") == -1){
+      console.log('ye');
       res.status(400).json({"error":"invalid email"});
       return;
     }
-    if(req.body.password.length < 8){
+
+    else if(req.body.password.length < 8){
       res.status(400).json({"error":"password must be at least 8 characters"});
       return;
     }
-    if(req.body.fullname.length < 3){
+    else if(req.body.fullname.length < 3){
       res.status(400).json({"error":"full name must be at least 3 characters"});
       return;
     }
 
-    if(user[0]!=undefined){res.status(400).json({"error":"user already exists"}); return;}
+    if(user[0]!=undefined){res.status(400).json({"error":"user already exists"}); console.log(user);return;}
     let returnValue = newUser(req.ip,req.body.email,req.body.password,req.body.fullname);
     if(returnValue.UID!=undefined){
       //console.log(returnValue);
@@ -432,8 +403,9 @@ app.post('/register', (req, res) => {
       const accessToken = jwt.sign(userCleaned, process.env.ACCESS_TOKEN_SECRET);
 
       if(!req.body.noauth){
-        res.cookie('Authorization', accessToken).send({"success": "user created"});
+        res.cookie('Authorization', accessToken,{maxAge:3600000,overwrite:true}).send({"success": "user created"});
       } else{
+        console.log("user created")
         res.json({"success": "user created"});
       }
 
@@ -495,46 +467,90 @@ app.get('/forgot-password', (req, res) => {
 
 
 app.post('/forgot-password', (req, res) => {
-  if(req.query.email == null || req.query.email.length == 0){
+  console.log(req.body);
+  if(req.body.email == null || req.body.email.length == 0){
     res.status(400).json({"error": "email cannot be empty"});
     return;
   }
-  const email = req.query.email;
+  const email = req.body.email;
   db.getUser(email, (user) => {
     if(user[0] == undefined){
       res.status(400).json({"error": "user does not exist"});
       return;
-    }
+    } 
     db.generateResetPasswordToken(email, (result) => {
       if(result == undefined){
         res.status(400).json({"error": "unknown error"});
-        return;
-      }
-      sendReset("zaydalzein@gmail.com", process.env.WEB_URL+"/reset-password?token=" + token);
+        return; 
+      } 
+      sendReset(req.body.email, process.env.WEB_URL+"/reset-password?token=" + result+"&email="+email);
       res.json({"success": "email sent"});
     });
   });
 });
 
-      
-      
 
-
-//127.0.0.1:3000/reset-password?token=e6035073-1702-4744-9a8c-f77e311bcb1e
 app.get('/reset-password', (req, res) => {
-  console.log(req.query);
   db.verifyResetPasswordToken(req.query.email,req.query.token, (user) => {
+    if(user.length == 0){
+      res.status(400).send('<div style="text-align:center; margin-top: 20%;"><h1>Invalid password reset token</h1> <a href="/forgot-password">Click here to reset your password</a><div>')
+      return;
+    }
+
+    if(user[0].created+900000 < Date.now()){
+      res.status(400).json({"error": "token expired"});
+      return;
+    }
+
+    res.sendFile(__dirname + '/public/authorization/reset.html');  
+  });
+});
+
+app.post('/reset-password', (req, res) => {
+  console.log(req.body);
+  if(req.body.password == null || req.body.password.length == 0){
+    res.status(400).json({"error": "password cannot be empty"});
+    return;
+  }
+  if(req.body.password.length < 8){
+    res.status(400).json({"error": "password must be at least 8 characters"});
+    return;
+  }
+
+  const email = req.body.email;
+  const token = req.body.token;
+  const password = req.body.password;
+  
+  db.verifyResetPasswordToken(email,token, (user) => {
+    console.log(user)
     if(user.length == 0){
       res.status(400).json({"error": "invalid token"});
       return;
     }
-    res.sendFile(path.join(__dirname + '/reset-password.html'));  });
+    if(user[0].created+900000 < Date.now()){
+      res.status(400).json({"error": "token expired"});
+      return;
+    }
+    db.resetPassword(email, bcrypt.hashSync(password, 10), (result) => {
+      if(result == undefined){
+        res.status(400).json({"error": "unknown error"});
+        return;
+      }
+      res.json({"success": "password reset"});
+    });
+  });
 });
-    
 
-app.get('*', function(req, res){
-  res.sendFile(__dirname+'/public/404.html');
+
+
+app.get('/contact', (req, res) => {
+  res.sendFile(__dirname + '/public/contact.html');
 });
+
+
+//app.get('*', function(req, res){
+//  res.sendFile(__dirname+'/public/404.html');
+//});
 
 
 app.listen(port, () => {
@@ -561,8 +577,6 @@ function newUser(ip,email,password,fullName){
   u1.setFirstName(firstName);
   u1.setLastName(lastName);
   u1.setAccountCreatedAt(Date.now());
-  u1.setAdsClicked(0);
-  u1.setAdsWatched(0);
   u1.setBanned(JSON.stringify({"banned": false, "reason": "", "date": ""}));
   u1.setCompletionsCount(0);
   u1.setOrders(JSON.stringify({"orders": []}));

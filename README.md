@@ -5,15 +5,44 @@
 - [x] Fix contact links
 - [x] Update Privacy Policy add "openAI user terms"
 - [x] Fix Load times with login page. Possible issue: Loading the SVG. Thin out css from bootstrap?
-- [ ] Termly 
+- [x] Termly 
 - [ ] Account verification via email
 - [ ] Finish Contact databse link
 - [ ] Payment processing
 - [ ] Setup watching ads for tokens
 - [x] reset password form | Add passwords dont match error
-- [ ] SITE UNBLOCKING ON FORTI-GAURD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-- [ ] CORRECT MY POOR FILE HREFS
-- [ ] Fix "app" link in dropdown for the account page. Brings user to login instead of back to application.
+- [x] SITE UNBLOCKING ON FORTI-GAURD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+- [x] CORRECT MY POOR FILE HREFS
+- [x] privacy-policy.html -> /privacy
+- [x] terms-of-service.html -> /terms
+- [x] disclaimer.html -> /disclaimer
+- [x] Fix "app" link in dropdown for the account page. Brings user to login instead of back to application.
+- [x] Fix sign out button, does not redirect to home or login page.
+- [x] reset password form not submitting to backend
+- [x] add implimentation of conseting to terms of service and user is over 13
+- [ ] tokens calculator
+- [x] Add pop up for when user is out of tokens, direct them to shop.
+
+Salesman suggestion:
+
+    Free Tier (no subscription): 3000 tokens
+
+    Basic Subscription: $1/month for 10000 tokens
+    Premium Subscription: $2/month for 15000 tokens
+    Elite Subscription: $5/month for 50000 tokens
+
+Standard cost non-subscription:
+
+    Starter Pack: $2 for 9000 tokens
+    Advanced Pack: $4 for 16000 tokens
+    Pro Pack: $8 for 50000 tokens
+
+
+
+
+
+
+
 
 .env required 
 

@@ -24,7 +24,9 @@ body {
   padding-top: 60px;
   padding-bottom: 100px;
 }
-
+.hidden { 
+  display: none;
+}
 .frame {
   height: 400px;
   width: 430px;
@@ -39,7 +41,8 @@ body {
 }
 
 .frame-long {
-  height: 500px;
+  height: 450px;
+  transition: height 0.5s ease;
 }
 
 .frame-short {
@@ -126,12 +129,12 @@ li {
 
 .form-forgot {
   width: 430px;
-  height: 220px;
+  height: 200px;
 	font-size: 16px;
 	font-weight: 300;
   padding-left: 37px;
   padding-right: 37px;
-  padding-top: 55px;
+  padding-top: 20px;
   transition: opacity .5s ease, transform .5s ease;
 }
 
@@ -291,6 +294,7 @@ a.btn-forgot:hover {
   margin: 0px;
   left: 0px;
   transition: all .5s ease;
+  
 }
 
 .signin-incorrect-hidden{
@@ -313,6 +317,63 @@ a.btn-forgot:hover {
   position: relative;
 
 }
+.alert-container {
+  width: 100%;
+  z-index: 999;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.5s ease;
+}
+
+.alert-message {
+  position: relative;
+  height: auto;
+  margin-left: 15px;
+  margin-right: 15px;
+  max-width: 800px;
+  padding: 15px 40px;
+  background-color: rgba(16,89,255, 1);
+  color: #fff;
+  border-radius: 5px;
+  font-size: 15px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.5s ease;
+}
+
+.alert-message .checkmark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #fff;
+  color: rgba(16,89,255, 1);
+  font-size: 25px;
+  font-weight: bold;
+  margin-right: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: 0.5s ease;
+}
+
+.alert-message p {
+  margin: 0;
+}
+
+.alert-message.hidden {
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  height: 10px;
+  transition: 0.5s ease;
+}
+
 
 
 

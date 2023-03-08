@@ -38,7 +38,8 @@ function getUserInfo() {
             $('#email-address').val(email);
             if (tier == 'free') { $('#tier').val('Free'); $('#free-information-item').toggleClass('active');} 
             else if (tier == 'basic') {$('#tier').val('Basic'); $('#basic-information-item').toggleClass('active');}
-            else if (tier == 'pro') {$('#tier').val('Pro'); $('#pro-information-item').toggleClass('active');}
+            else if (tier == 'premium') {$('#tier').val('Premium'); $('#premium-information-item').toggleClass('active');}
+            else if (tier == 'elite') {$('#tier').val('Elite'); $('#elite-information-item').toggleClass('active');}
             else if (tier == 'admin') {$('#tier').val('Admin');}
             //add commas to balance
             $('#user-balance').val(balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' Tokens');
@@ -52,19 +53,26 @@ function getUserInfo() {
     });
 };
 function setUsernameText() {
-$.ajax({
-  url: '/get-user-info',
-  type: 'GET',
-  data: { email: email},
-  success: function (data) {
+  $.ajax({
+    url: '/get-user-info',
+    type: 'GET',
+    data: { email: email},
+    success: function (data) {
       let firstName = data.firstName;
-      console.log(firstName);
-      $("#username-txt").text(firstName);
-  },
-  error: function (data) {
+      $('#username-text').text(firstName);
+      // add icon to link
+      $('#username-text').append('<span><i class="ti-angle-down"></i></span>');
+    },
+    error: function (data) {
       console.log("error");
       // error handling code 
-  }
-});
+      $('#sign-out').remove();
+      $('#app').remove();
+      $('#account').remove();
+      $('#username-text').parent().removeClass('dropdown');
+      $('#username-text').attr('href', '/account');
+      $('#username-text').removeClass('dropdown-toggle');
+    }
+  });
 };
 setUsernameText();
