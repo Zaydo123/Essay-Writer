@@ -1,12 +1,19 @@
 
   {"free": {
-    "tokens": 500,
+    "tokens": 3000,
     "price": 0,
     "max_tokens": 200,
     "engine": "gpt-3.5-turbo"
   },
   "basic": {
     "stripe_id":"prod_NTTV4au7YBeoHw",
+    "tokens": 10000,
+    "price": 1,
+    "max_tokens": 500,
+    "engine": "gpt-3.5-turbo"
+  },
+  "basic-test": {
+    "stripe_id":"prod_NTTUwFpJoGirWs",
     "tokens": 10000,
     "price": 1,
     "max_tokens": 500,

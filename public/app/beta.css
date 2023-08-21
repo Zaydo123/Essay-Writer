@@ -81,22 +81,24 @@ h1, h2, h3 {
 
 
 
-
 .textbox {
   width: 80%;
-  height: 650px; /* Updated height */
+  height: 80%;
+  min-height: 500px;
   max-width: 1000px;
   margin: auto;
-  margin-top: 50px;
+  margin-top: 2%;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  padding: 20px;
+  padding: 1%;
   background-color: #fff;
+  display: flex;
+  flex-direction: column;
 }
 
 .text-area { 
   width: 100%;
-  height: 70%; /* Updated height */
+  height: 80%; /* Updated height */
   background-color: #fff;
   color: #000;
   border-radius: 5px;
@@ -104,9 +106,17 @@ h1, h2, h3 {
   padding: 10px;
   resize: none;
 }
-
+.token-cost {
+  padding-left: 10px;
+  display: flex;
+  color: #555;
+  font-size: 14px;
+  font-weight: bold;
+}
 .submit,
-.clear {
+.clear,
+.max-token-usage {
+  display: inline-block;
   margin-top: 10px;
   margin-bottom: 10px;
   margin-left: 10px;
@@ -123,7 +133,40 @@ h1, h2, h3 {
   background-color: #0f3467;
   transition: linear 0.5s;
 }
+
+.max-token-box {
+  height: min-content;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  background-color: #0f3467;
+  padding: 10px;
+  border-radius: 5px;
+  align-self: center;
+}
+
+.max-token-usage {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin: 0px !important;
+  margin-left: 10px;
+  height: 24px;
+  width: 200px;
+}
+
+.max-token-value {
+  margin-left: 10px;
+  min-width: 30px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  text-align: center;
+  font-size: medium;
+  font-weight: bold;
+  cursor: pointer;
+  outline: none;
+}
 .button-container {
+  height: fit-content;
   display: flex;
   flex-direction: row;
   margin-top: 10px;
@@ -193,4 +236,168 @@ h1, h2, h3 {
     -webkit-transform: rotate(360deg);
             transform: rotate(360deg); } }
 
-            
+#why-text {
+  color:#2e7eed; 
+  text-decoration:underline;   
+  cursor: pointer;
+}
+#info-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  width: 600px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#info-card h3 {
+  width: auto;
+  border-bottom: solid 2px #1059FF;
+  margin-top: 0;
+  margin-bottom: 7px;
+}
+
+#info-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  
+}
+
+#info-card ul li {
+  margin-bottom: 10px;
+  padding-left: 20px;
+  position: relative;
+}
+#info-card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #555;
+}
+
+#why-text {
+  cursor: pointer;
+}
+
+.card-show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.card-animation {
+  animation-name: card-anim;
+  animation-duration: 0.3s;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes card-anim {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+#close-btn {
+  height: 40px;
+  width: fit-content;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #2e7eed;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+}
+
+#close-btn:hover {
+  background-color: #0f3467;
+  transition: background-color 0.5s linear;
+}
+
+#close-btn a {
+  color: #fff;
+  font-size: 20px;
+  text-decoration: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media only screen and (max-width: 767px) {
+  /* Style for text area */
+  .text-area {
+    width: 100%;
+    font-size: 14px;
+    padding: 5px;
+    margin-bottom: 10px;
+  }
+
+  /* Style for button container */
+  .button-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  /* Style for submit and clear buttons */
+  .submit,
+  .clear {
+    font-size: 12px;
+    margin-right: 2px;
+    margin-bottom: 10px;
+  }
+
+  /* Style for token box */
+  .token-box {
+    font-size: 12px;
+    margin-right: 2px;
+    margin-bottom: 10px;
+  }
+
+  /* Style for basic div */
+  .basic {
+    display: none;
+  }
+
+  /* Style for max token box */
+  .max-token-box {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Style for max token box label */
+  .max-token-box a {
+    font-size: 12px;
+    margin-right: 10px;
+  }
+
+  /* Style for max token usage slider */
+  .max-token-usage {
+    width: 100px;
+    margin-right: 10px;
+  }
+
+  /* Style for max token value span */
+  .max-token-value {
+    font-size: 12px;
+    margin-right: 10px;
+  }
+}

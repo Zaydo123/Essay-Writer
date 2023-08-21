@@ -1,9 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_API);
 const productsJson = require('./products.json');
+const tiersJson = require('./tiers.json');
 module.exports = function(express,bodyParser,app,db,ENDPOINT_SECRET,DOMAIN) {
-
-
- //TESTING_100_FREE
 
   function fulfillOrder(customer, email, mode, subscription, product_id,transaction_id) {
 
@@ -15,20 +13,39 @@ module.exports = function(express,bodyParser,app,db,ENDPOINT_SECRET,DOMAIN) {
  
     let order = {product:product_id,price:product['price'],email:email,mode:mode,subscription:subscription,transaction_id:transaction_id};
 
-    if(mode == 'payment') {
+    if(mode) {
+
+      /* tiers.json
+
+          "basic": {
+            "stripe_id":"prod_NTTV4au7YBeoHw",
+            "tokens": 10000,
+            "price": 1,
+            "max_tokens": 500,
+            "engine": "gpt-3.5-turbo"
+          },
+
+      */
+      if(mode == 'subscription') {
+        //find json key by stripe_id
+        let tier = Object.keys(tiersJson).find(key => tiersJson[key].stripe_id === product_id);
+        db.setTier(email,tier,function(result) {
+          console.log('tier set');
+        });
+        //email, stripeID, transactionID, transactionMade, subscriptionExpires, notes="", callback)
+        db.addSubscriber(email,product_id,transaction_id,Date.now(),Date.now() + 2592000000,'',function(result) { //add 30 days to current date
+          console.log('subscription added');
+        });
+      }
+
       db.addBalance(email,product['token-amount'],function(result) {  
         db.appendOrder(email,order,function(result) {
           console.log('order added');
         });
       });
-
-
     }
 
   }
-
-
-
 
 
   function addRawBody(req, res, next) {

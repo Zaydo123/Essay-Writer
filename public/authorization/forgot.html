@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>PhysicsChat | Forgot</title>
   <link rel="stylesheet" href="/authorization/forgot.css" />
 
@@ -33,7 +34,7 @@
             <p>Your recovery email has been sent!</p>
           </div>
         </div>
-        <form id="submitLogin" class="form-forgot" action="/forgot-password" method="post" name="form" required>
+        <form id="submitLogin" class="form-forgot" action="" method="" name="form" required>
           <label for="email">Email</label>
           <input style="margin-bottom: 0px;" class="form-styling" type="text" name="email" placeholder="" />
 
@@ -121,10 +122,6 @@
           alertMessage.classList.remove('hidden');
           emailInput.value = '';
 
-          setTimeout(() => {
-            $("#frame").removeClass("frame-long");
-            alertMessage.classList.add('hidden');
-          }, 5000);
 
           sendEmailButton.addEventListener('click', () => {
             emailInput.value = '';

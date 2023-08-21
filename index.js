@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const express = require('express');
-const GPT3Tokenizer = require('gpt3-tokenizer');
+const gptEncoder = require('gpt-3-encoder');
 //internal modules
 const sendReset  = require('./reset-password');
 const { Order } = require("./classes/Order");
@@ -16,8 +16,13 @@ const { Warning } = require("./classes/Warning");
 const { Database } = require("./classes/Database");
 const crypto = require('crypto');
 const fetch = require("node-fetch");
+const trigger = require('./referral');
 
 
+
+let recentEvents =[];
+
+ 
 const MODERATION_API_URL = `https://api.openai.com/v1/moderations`;
 
 //connect to database and setup class
@@ -41,13 +46,14 @@ app.set('view engine', 'ejs');
 
 //import express routes from ./stripe.js
 require('./stripe')(express,bodyParser,app,db,process.env.STRIPE_SECRET_KEY,process.env.STRIPE_PUBLISHABLE_KEY,process.env.DOMAIN);
-
-
-
+const sendVerificationEmail = require('./email-verification')
 
 
 //read tiers.json
 let tiers = require('./tiers.json');
+const e = require("express");
+
+//read email verification routes
 
  
 //openai INIT 
@@ -60,9 +66,7 @@ const openai = new OpenAIApi(configuration);
 //let tokenizerCODEX = new GPT3Tokenizer.GPT3Tokenizer({type: "codex"});
 //
 
-
 // ------------------------------
-let starting_balance = 20.00;
 // ------------------------------
 
 
@@ -181,6 +185,13 @@ app.get('/get-user-info',(req, res) => {
         return;
       }
       user = user[0];
+
+      if(user.verified==0){
+        user.verified = false;
+      } else{
+        user.verified = true;
+      }
+
       res.json({
       "firstName": user.firstName, 
       "lastName": user.lastName, 
@@ -189,8 +200,9 @@ app.get('/get-user-info',(req, res) => {
       "email": user.email, 
       "completionsCount": user.completionsCount,
       "usedTokens": user.usedTokens,
-
-    
+      "verified": user.verified,
+      "tierMaxTokenRequest": tiers[user.tier]['max_tokens'],
+      "referralCode": user.referralCode
     });
   });
 });
@@ -205,7 +217,7 @@ POST REQUESTS
 
 app.post('/ai', verify, async (req, res) => {
   let prompt = req.body.prompt;
-
+  let maxTokens = req.body.maxTokens;
   if(!prompt||prompt.length < 1){
     res.status(400).json({"error": "prompt is empty"});
     return;
@@ -220,6 +232,9 @@ app.post('/ai', verify, async (req, res) => {
     if(!user[0]){
       res.status(400).json({"error": "user does not exist"});
       return;
+    } else if (user[0].verified == 0){
+      res.status(400).json({"error": "user has not verified their email"});
+      return;
     }
     
     user = user[0];
@@ -227,7 +242,10 @@ app.post('/ai', verify, async (req, res) => {
 
     if(user.balance <= 0){
       res.status(400).json({"error": "user has used up their tokens"});
-      return;
+      if(user.balance < 0){
+        db.setBalance(user.email, 0, () => {});
+      }
+        return;
     }
   
     //jsonify the banned object and warnings object
@@ -301,21 +319,29 @@ app.post('/ai', verify, async (req, res) => {
       const response = openai.createChatCompletion({
         model: tiers[tier].engine,
         messages: [{role:"user",content:prompt}],
-        max_tokens: tiers[tier].max_tokens,
+        max_tokens: maxTokens,
         temperature: 0,
+        user: user.UID
       }).catch((error) => {
         console.log(error);
         res.status(400).json({"error": "error with openai api"});
         return;
       });
       response.then((data) => {
-        console.log(data);
         let completion = data.data.choices[0].message.content;
         res.json({"completion": completion});
         if(data.data.usage.completion_tokens>0){
           db.decrementBalance(user.email,data.data.usage.total_tokens);
         }
       });
+
+      recentEvents.push({
+        "firstName": user.firstName,
+        "event": "asked a question",
+        "time": new Date().toLocaleString()
+      });
+
+
    });
 });
 });
@@ -348,16 +374,26 @@ app.post('/login', (req, res) => {
       try{
         if(bcrypt.compareSync(req.body.password, user.password)){
           const accessToken = jwt.sign(userCleaned, process.env.ACCESS_TOKEN_SECRET);
-          res.cookie('Authorization', accessToken,{maxAge:Date.now()+3600000,overwrite:true}).send({"success": "logged in"});
+          user.banned = JSON.parse(user.banned);
+          user.warnings = JSON.parse(user.warnings);
+
+          console.log(user.banned.banned);
+
+          if(user.banned.banned==true){
+              res.status(400).json({"error": "user is banned"});
+              db.expireWarnings(email);
+              return;
+          } else{
+            res.cookie('Authorization', accessToken,{maxAge:Date.now()+3600000,overwrite:true}).send({"success": "logged in"});
+
+          }
           //res.cookie('Authorization', accessToken, {secure: true}).send(accessToken);
 
+          let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
           //if new IP, update IP
-          if(user.ip != req.ip){
-            db.updateIP(email, req.ip);
-          }
-          if(user.warnings.length > 0 || user.banned.banned){
-            db.expireWarnings(email);
+          if(user.ip != ip){
+            db.updateIP(email, ip);
           }
         } else{
           res.status(400).json({"error": "passwords do not match"});
@@ -394,7 +430,15 @@ app.post('/register', (req, res) => {
     }
 
     if(user[0]!=undefined){res.status(400).json({"error":"user already exists"}); console.log(user);return;}
-    let returnValue = newUser(req.ip,req.body.email,req.body.password,req.body.fullname);
+
+    //proxy_set_header  X-Real-IP $remote_addr;
+
+    //get ip address from header 
+    let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    console.log(ip);
+    
+    let returnValue = newUser(ip,req.body.email,req.body.password,req.body.fullname,req.body.referredByCode);
     if(returnValue.UID!=undefined){
       //console.log(returnValue);
       let userCleaned = JSON.parse(JSON.stringify(returnValue));
@@ -425,6 +469,7 @@ app.post("/submit-contact-request", (req, res) => {
   let name = req.body.name;
   let subject = req.body.subject;
   let message = req.body.message;
+  let timestamp = new Date();
   if(!email || !name || !subject || !message){
     res.status(400).json({"error": "missing fields"});
     return;
@@ -433,10 +478,11 @@ app.post("/submit-contact-request", (req, res) => {
     res.status(400).json({"error": "invalid email"});
     return;
   }
-
+  //ZAYD LOOK HERE
+  res.json({"success": "message sent"});
   console.log("contact request from " + email + " with id " + id);
   console.log('details: ' + name + " " + subject + " " + message);
-
+  db.addContactRequest(id, email, name, subject, message, timestamp);
 });
 
 app.get('/searchUser', verify, (req, res) => {
@@ -542,27 +588,139 @@ app.post('/reset-password', (req, res) => {
 });
 
 
+app.get('/verify-email', (req, res) => {
+  const code = req.query.code;
+  const email = req.query.email;
+
+  if(!code || !email) return res.send("{'error':'No code or email provided'}");
+  db.getEmailVerificationCode(email,code,result => {
+      
+      if(result.length>0){
+          
+        db.verifyEmailVerificationCode(email,code,result => {
+            if(result){
+                res.redirect('/account');
+                db.deleteEmailVerificationCode(email,code,() => {});
+                trigger.trigger(db,email);
+            } else {
+                res.send({'error':'Email not verified'});
+            }
+        });
+      } else {
+          res.send({'error':'Invalid code'});
+      }  
+  });
+});
+
+
+app.post('/verify-email', (req, res) => {
+  const email = req.body.email;
+  if(!email) return res.send("{'error':'No email provided'}");
+  db.getUser(email, resultUser => {
+
+      if(resultUser.length>0){
+          if(resultUser[0].verified==1){
+              res.send({'error':'Email already verified'});
+          } else {
+             db.getEmailVerificationCodesByEmail(email,result => {
+                  if(result.length>0){
+                      for(let i=0;i<result.length;i++){
+                          db.deleteEmailVerificationCode(email,result[i].code,() => {});
+                      }
+                  }
+                  sendVerificationEmail(db,resultUser[0].email);
+                  res.send({'success':'Verification email sent'});
+              });
+          }
+      } else {
+          res.send({'error':'User not found'});
+      }
+  });
+});
+
+app.post('/get-prompt-cost',(req, res) => {
+  if(req.body.prompt){
+    res.json({"cost":calculateTokenCost(req.body.prompt)});
+  } else{
+    res.json({"cost":0});
+  }
+    
+});
+
+app.get('/banned', (req, res) => {
+  res.send(`
+  <h1> If you are seeing this page, you have been banned from using this service. </h1>
+  <h2> If you believe this is a mistake, please contact us at
+  <a href="mailto:admin@physics-chat.com">admin@physics-chat.com</a>
+  `)
+});
+
 
 app.get('/contact', (req, res) => {
   res.sendFile(__dirname + '/public/contact.html');
 });
 
+app.get('/faq', (req, res) => {
+  res.sendFile(__dirname + '/public/faq.html');
+});
 
-//app.get('*', function(req, res){
-//  res.sendFile(__dirname+'/public/404.html');
-//});
+app.get('/events', (req, res) => {
+  res.json({"events":recentEvents});
+  if(recentEvents.length > 10){
+    recentEvents = recentEvents.slice(0,10);
+  }
+});
 
+
+
+app.get('*', function(req, res){
+  res.sendFile(__dirname+'/public/404.html');
+});
+
+
+//every 1 hour check db.getSubscribers() and if subscriptionExpires < Date.now() then db.setTier(email,"free")
+setInterval(() => {
+  db.getSubscribers((result) => {
+    for(let i=0;i<result.length;i++){
+      if(result[i].subscriptionExpires < Date.now()){
+        db.setTier(result[i].email,"free",() => {
+          db.removeSubscriber(result[i].email,() => {
+            console.log("removed subscriber: " + result[i].email);
+          });
+        });
+      }
+    }
+  });
+}, 3600000);
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
 
-
+ 
 // Path: classes/User.js
-function newUser(ip,email,password,fullName){
+function newUser(ip,email,password,fullName,referredByCode){
   const hashedPassword = bcrypt.hashSync(password, 10);
   let tier = "free"; //free tier 
   //(ip,email,password,firstName,lastName,tier)
+
+  function makeReferralCode(){
+    let referralCode = crypto.randomBytes(5).toString('hex');
+    db.getUserByReferral(referralCode, (result) => {
+      if(result.length > 0){
+        makeReferralCode();
+      } else{
+        db.setReferralCode(email,referralCode,() => {});
+        return referralCode;
+      }
+    });
+  }
+
+  
+  let referralCode = makeReferralCode();
+
+  
+
   let firstName;
   let lastName;
   if(fullName.indexOf(" ") == -1){
@@ -583,9 +741,19 @@ function newUser(ip,email,password,fullName){
   u1.setUID(crypto.randomUUID());
   u1.setUsedTokens(0);
   u1.setWarnings(JSON.stringify({"warnings": []}));
-  db.newUser(u1, (result) => {
+  db.newUser(u1, (result) => {});
+  db.setReferredByCode(email, referredByCode, () => {});
+  db.setReferrals(email,JSON.stringify({"referrals": []}),() => {});
+  sendVerificationEmail(db,email);
+
+  recentEvents.push({
+    "firstName": firstName,
+    "event": "just signed up!",
+    "time": new Date().toLocaleString()
   });
+
   return u1.getAll();
+
   
 
 }
@@ -604,11 +772,11 @@ function verify(req,res,next){
 }
 
 
-function calculateTokenCost(inputString, model){
-  if(model == "CODEX"){
-    let encoded = tokenizerCODEX.encode(inputString);
-  } else if(model == "GPT3"){
-    let encoded = tokenizerGPT3.encode(inputString);
-  }
+function calculateTokenCost(inputString){
+  let encoded = gptEncoder.encode(inputString);
   return encoded.length;
 }
+
+calculateTokenCost("Hello World");
+
+

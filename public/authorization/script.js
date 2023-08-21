@@ -19,16 +19,19 @@ $(function () {
     let confirmPassword = document.getElementsByName("confirmpassword")[0].value;
     let fullName = document.getElementsByName("fullname")[0].value;
     let checkbox = document.getElementById('termsCheckbox');
+    let referredByCode = document.getElementsByName("referral")[0].value;
 
     if (password != confirmPassword) {
       $(".signup-incorrect-hidden").toggleClass("signup-incorrect-show");
       $(".signup-incorrect-show").removeClass("signup-incorrect-hidden");
       $(".incorrect-text").text("Passwords do not match");
+      shakeButton("signup");
     } 
     else if (checkbox.checked == false) {
       $(".signup-incorrect-hidden").toggleClass("signup-incorrect-show");
       $(".signup-incorrect-show").removeClass("signup-incorrect-hidden");
       $(".incorrect-text").text("Please agree to the terms and conditions");
+      shakeButton("signup");
     }
     else {
       $.ajax({
@@ -39,6 +42,7 @@ $(function () {
           password: password,
           fullname: fullName,
           confirmpassword: confirmPassword,
+          referredByCode: referredByCode,
         },
 
         //success function
@@ -46,7 +50,9 @@ $(function () {
           $(".nav").toggleClass("nav-up");
           $(".form-signup-left").toggleClass("form-signup-down");
           $(".success").toggleClass("success-left");
-          $(".frame").toggleClass("frame-short");
+          $(".frame").toggleClass("frame-long");
+          $(".frame").toggleClass("frame-success");
+
           console.log(data);
         },
 
@@ -58,8 +64,7 @@ $(function () {
           $(".signup-incorrect-show").removeClass("signup-incorrect-hidden");
           $(".incorrect-text").text(jqXHR.responseJSON.error);
           console.log(jqXHR.responseJSON.error);
-          //Make the button shake
-          $(".btn-signup").addClass("btn-animate-shake");
+          shakeButton("signup");
         },
       });
     }
@@ -105,6 +110,7 @@ $(function () {
       success: function (data) {
         console.log(data.success);
         //show the success message
+        /*
         $(".premium-status-container").removeClass("premium-status-container-hidden");
         $(".btn-animate").toggleClass("btn-animate-grow");
         $(".welcome").toggleClass("welcome-left");
@@ -116,16 +122,37 @@ $(function () {
         $(".forgot").toggleClass("forgot-left");
         $(".signin-incorrect-show").toggleClass("signin-incorrect-hidden");
         $(".signin-incorrect-hidden").removeClass("signin-incorrect-show");
-        console.log("success");
+        console.log("success");*/
+        window.location.href = "/beta";
       },
 
       error: function (data) {
         //show the Incorrect Password message
+        //data.error to string
+        console.log(data)
+        let error = data.responseJSON.error;
+        console.log(error);
+        if(error.includes("banned")){
+          window.location.href="/banned";
+        }
+
         $(".signin-incorrect-hidden").toggleClass("signin-incorrect-show");
         $(".signin-incorrect-show").removeClass("signin-incorrect-hidden");
         //Make the button shake
-        $(".btn-animate").addClass("btn-animate-shake");
+        shakeButton("signin");
       },
     });
   });
 });
+
+
+function shakeButton(button) {
+  //Make the button shake
+  $(".btn-"+button).addClass("btn-animate-shake");
+  //wait 1 second and remove the shake class
+  setTimeout(function () {
+    $(".btn-"+button).removeClass("btn-animate-shake");
+  }, 1000);
+
+
+}

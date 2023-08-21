@@ -99,6 +99,7 @@ class Database {
             callback(result);
         });
     }
+    
 
     end() {
         this.db.end();
@@ -382,6 +383,174 @@ class Database {
             });
         });
     }
+
+    generateEmailVerificationCode(email,callback){
+        let code = crypto.randomUUID();
+        this.db.query(`INSERT INTO emailVerification (email, code,created) VALUES ('${email}', '${code}', '${Date.now()}')`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(code);
+        });
+
+    }
+
+
+    //see if verification code exists
+    getEmailVerificationCode(email,code,callback){
+        this.db.query(`SELECT * FROM emailVerification WHERE email = '${email}' AND code = '${code}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    verifyEmailVerificationCode(email,code,callback){
+        this.db.query(`SELECT * FROM emailVerification WHERE email = '${email}' AND code = '${code}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            if(result.length>0){
+                this.db.query(`UPDATE users SET verified = 1 WHERE email = '${email}'`, (err, result) => {
+                    if (err) {
+                        throw err;
+                    }
+                    callback(result);
+                });
+            }
+        });
+    }
+
+    
+    getEmailVerificationCodesByEmail(email,callback){
+        this.db.query(`SELECT * FROM emailVerification WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    deleteEmailVerificationCode(email,code,callback){
+        this.db.query(`DELETE FROM emailVerification WHERE email = '${email}' AND code = '${code}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }    
+            callback(result);
+        });    
+    }
+    //ZAYD LOOK HERE
+    addContactRequest(id, email, name, subject, message, timestamp){
+        this.db.query(`INSERT INTO contact (id, email, name, subject, message, timestamp) VALUES ('${id}', '${email}', '${name}', '${subject}', '${message}', '${timestamp}')`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+        });
+    }
+
+    setTier(email, tier, callback){
+        this.db.query(`UPDATE users SET tier = '${tier}' WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+
+    addSubscriber(email, stripeID, transactionID, transactionMade, subscriptionExpires, notes="", callback){
+        this.db.query(`INSERT INTO subscribers (email, stripeID, transactionID, transactionMade, subscriptionExpires, notes) VALUES ('${email}', '${stripeID}', '${transactionID}', '${transactionMade}', '${subscriptionExpires}', '${notes}')`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    removeSubscriber(email, callback){
+        this.db.query(`DELETE FROM subscribers WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    getSubscriber(email, callback){
+        this.db.query(`SELECT * FROM subscribers WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    getSubscribers(callback){
+        this.db.query(`SELECT * FROM subscribers`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    setReferralCode(email, referralCode, callback){
+        this.db.query(`UPDATE users SET referralCode = '${referralCode}' WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    setReferredByCode(email, referredByCode, callback){
+        this.db.query(`UPDATE users SET referredByCode = '${referredByCode}' WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    getUserByReferral(code, callback){
+        this.db.query(`SELECT * FROM users WHERE referralCode = '${code}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    setReferrals(email, referrals, callback){
+        this.db.query(`UPDATE users SET referrals = '${referrals}' WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+
+    }
+    addReferral(referrer, newUserEmail, callback){ //referrer is of type User
+        let referrals = JSON.parse(referrer.referrals);
+        referrals.referrals.push({email: newUserEmail, date: Date.now()});
+        this.setReferrals(referrer.email, JSON.stringify(referrals), (result)=>{});   
+        this.addBalance(referrer.email, 1500, (result)=>{}); //add $ to referrer's balance
+        this.addBalance(newUserEmail, 1500, (result)=>{}); //add $ to new user's balance
+        callback();
+
+    }
+    getReferrals(email, callback){
+        this.db.query(`SELECT referrals FROM users WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    getReferralCode(email, callback){
+        this.db.query(`SELECT referralCode FROM users WHERE email = '${email}'`, (err, result) => {
+            if (err) {
+                throw err;
+            }
+            callback(result);
+        });
+    }
+    
+    
+
 
 }
 
